@@ -7,5 +7,10 @@
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
-
+    <PropertyGroup>
+      <Copyright>Copyright © 2025 kttFox</Copyright>
+      <Authors>kttFox</Authors>
+      <AssemblyVersion>1.0.0.0</AssemblyVersion>
+      <FileVersion>1.0.0.0</FileVersion>
+    </PropertyGroup>
 </Project>
