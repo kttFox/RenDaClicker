@@ -32,6 +32,9 @@ namespace SimpleClicker {
 			this.labelInterval = new Label();
 			this.numInterval = new NumericUpDown();
 			this.labelMs = new Label();
+			this.labelHoldTime = new Label();
+			this.numHold = new NumericUpDown();
+			this.labelHoldMs = new Label();
 			this.labelHotkey = new Label();
 			this.textHotkey = new TextBox();
 			this.buttonCapture = new Button();
@@ -45,6 +48,7 @@ namespace SimpleClicker {
 			this.groupButton.SuspendLayout();
 			this.groupMode.SuspendLayout();
 			( (System.ComponentModel.ISupportInitialize)this.numInterval ).BeginInit();
+			( (System.ComponentModel.ISupportInitialize)this.numHold ).BeginInit();
 			this.SuspendLayout();
 			// 
 			// groupButton
@@ -134,11 +138,39 @@ namespace SimpleClicker {
 			this.labelMs.Size = new Size( 22, 15 );
 			this.labelMs.TabIndex = 4;
 			this.labelMs.Text = "ms";
-			// 
+			//
+			// labelHoldTime
+			//
+			this.labelHoldTime.AutoSize = true;
+			this.labelHoldTime.Location = new Point( 12, 136 );
+			this.labelHoldTime.Name = "labelHoldTime";
+			this.labelHoldTime.Size = new Size( 68, 15 );
+			this.labelHoldTime.TabIndex = 15;
+			this.labelHoldTime.Text = "押下時間:";
+			//
+			// numHold
+			//
+			this.numHold.Location = new Point( 100, 133 );
+			this.numHold.Maximum = new decimal( new int[] { 60000, 0, 0, 0 } );
+			this.numHold.Minimum = new decimal( new int[] { 1, 0, 0, 0 } );
+			this.numHold.Name = "numHold";
+			this.numHold.Size = new Size( 80, 23 );
+			this.numHold.TabIndex = 16;
+			this.numHold.Value = new decimal( new int[] { 50, 0, 0, 0 } );
+			//
+			// labelHoldMs
+			//
+			this.labelHoldMs.AutoSize = true;
+			this.labelHoldMs.Location = new Point( 185, 136 );
+			this.labelHoldMs.Name = "labelHoldMs";
+			this.labelHoldMs.Size = new Size( 22, 15 );
+			this.labelHoldMs.TabIndex = 17;
+			this.labelHoldMs.Text = "ms";
+			//
 			// labelHotkey
 			// 
 			this.labelHotkey.AutoSize = true;
-			this.labelHotkey.Location = new Point( 12, 226 );
+			this.labelHotkey.Location = new Point( 12, 254 );
 			this.labelHotkey.Name = "labelHotkey";
 			this.labelHotkey.Size = new Size( 53, 15 );
 			this.labelHotkey.TabIndex = 5;
@@ -146,7 +178,7 @@ namespace SimpleClicker {
 			// 
 			// textHotkey
 			// 
-			this.textHotkey.Location = new Point( 100, 223 );
+			this.textHotkey.Location = new Point( 100, 251 );
 			this.textHotkey.Name = "textHotkey";
 			this.textHotkey.ReadOnly = true;
 			this.textHotkey.Size = new Size( 120, 23 );
@@ -159,7 +191,7 @@ namespace SimpleClicker {
 			// 
 			// buttonCapture
 			// 
-			this.buttonCapture.Location = new Point( 230, 222 );
+			this.buttonCapture.Location = new Point( 230, 250 );
 			this.buttonCapture.Name = "buttonCapture";
 			this.buttonCapture.Size = new Size( 75, 25 );
 			this.buttonCapture.TabIndex = 10;
@@ -169,7 +201,7 @@ namespace SimpleClicker {
 			//
 			// buttonSuspend
 			//
-			this.buttonSuspend.Location = new Point( 12, 253 );
+			this.buttonSuspend.Location = new Point( 12, 281 );
 			this.buttonSuspend.Name = "buttonSuspend";
 			this.buttonSuspend.Size = new Size( 293, 25 );
 			this.buttonSuspend.TabIndex = 14;
@@ -180,7 +212,7 @@ namespace SimpleClicker {
 			// checkLockPos
 			// 
 			this.checkLockPos.AutoSize = true;
-			this.checkLockPos.Location = new Point( 12, 134 );
+			this.checkLockPos.Location = new Point( 12, 162 );
 			this.checkLockPos.Name = "checkLockPos";
 			this.checkLockPos.Size = new Size( 208, 19 );
 			this.checkLockPos.TabIndex = 11;
@@ -192,7 +224,7 @@ namespace SimpleClicker {
 			this.checkIndicator.AutoSize = true;
 			this.checkIndicator.Checked = true;
 			this.checkIndicator.CheckState = CheckState.Checked;
-			this.checkIndicator.Location = new Point( 12, 192 );
+			this.checkIndicator.Location = new Point( 12, 220 );
 			this.checkIndicator.Name = "checkIndicator";
 			this.checkIndicator.Size = new Size( 221, 19 );
 			this.checkIndicator.TabIndex = 12;
@@ -203,7 +235,7 @@ namespace SimpleClicker {
 			//
 			this.labelEmergencyNote.AutoSize = true;
 			this.labelEmergencyNote.ForeColor = SystemColors.GrayText;
-			this.labelEmergencyNote.Location = new Point( 28, 155 );
+			this.labelEmergencyNote.Location = new Point( 28, 183 );
 			this.labelEmergencyNote.Name = "labelEmergencyNote";
 			this.labelEmergencyNote.Size = new Size( 280, 30 );
 			this.labelEmergencyNote.TabIndex = 13;
@@ -213,7 +245,7 @@ namespace SimpleClicker {
 			// 
 			this.labelStatus.AutoSize = true;
 			this.labelStatus.Font = new Font( "Yu Gothic UI", 9F, FontStyle.Bold );
-			this.labelStatus.Location = new Point( 12, 296 );
+			this.labelStatus.Location = new Point( 12, 324 );
 			this.labelStatus.Name = "labelStatus";
 			this.labelStatus.Size = new Size( 61, 15 );
 			this.labelStatus.TabIndex = 7;
@@ -221,7 +253,7 @@ namespace SimpleClicker {
 			// 
 			// buttonStart
 			// 
-			this.buttonStart.Location = new Point( 150, 290 );
+			this.buttonStart.Location = new Point( 150, 318 );
 			this.buttonStart.Name = "buttonStart";
 			this.buttonStart.Size = new Size( 75, 27 );
 			this.buttonStart.TabIndex = 8;
@@ -231,7 +263,7 @@ namespace SimpleClicker {
 			// 
 			// buttonStop
 			// 
-			this.buttonStop.Location = new Point( 230, 290 );
+			this.buttonStop.Location = new Point( 230, 318 );
 			this.buttonStop.Name = "buttonStop";
 			this.buttonStop.Size = new Size( 75, 27 );
 			this.buttonStop.TabIndex = 9;
@@ -243,12 +275,15 @@ namespace SimpleClicker {
 			// 
 			this.AutoScaleDimensions = new SizeF( 7F, 15F );
 			this.AutoScaleMode = AutoScaleMode.Font;
-			this.ClientSize = new Size( 320, 328 );
+			this.ClientSize = new Size( 320, 356 );
 			this.Controls.Add( this.groupButton );
 			this.Controls.Add( this.groupMode );
 			this.Controls.Add( this.labelInterval );
 			this.Controls.Add( this.numInterval );
 			this.Controls.Add( this.labelMs );
+			this.Controls.Add( this.labelHoldTime );
+			this.Controls.Add( this.numHold );
+			this.Controls.Add( this.labelHoldMs );
 			this.Controls.Add( this.labelHotkey );
 			this.Controls.Add( this.textHotkey );
 			this.Controls.Add( this.buttonCapture );
@@ -266,6 +301,7 @@ namespace SimpleClicker {
 			this.groupButton.ResumeLayout( false );
 			this.groupMode.ResumeLayout( false );
 			( (System.ComponentModel.ISupportInitialize)this.numInterval ).EndInit();
+			( (System.ComponentModel.ISupportInitialize)this.numHold ).EndInit();
 			this.ResumeLayout( false );
 			this.PerformLayout();
 		}
@@ -281,6 +317,9 @@ namespace SimpleClicker {
 		private Label labelInterval;
 		private NumericUpDown numInterval;
 		private Label labelMs;
+		private Label labelHoldTime;
+		private NumericUpDown numHold;
+		private Label labelHoldMs;
 		private Label labelHotkey;
 		private TextBox textHotkey;
 		private Button buttonCapture;

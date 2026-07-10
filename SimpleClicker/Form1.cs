@@ -1,48 +1,18 @@
-using System.Runtime.InteropServices;
+using Windows.Win32;
+using Windows.Win32.UI.Input.KeyboardAndMouse;
+using Windows.Win32.UI.WindowsAndMessaging;
 
 namespace SimpleClicker {
 	public partial class Form1 : Form {
 
-		[DllImport( "user32.dll" )]
-		private static extern short GetAsyncKeyState( int vKey );
-
-		[DllImport( "user32.dll" )]
-		private static extern uint SendInput( uint nInputs, INPUT[] pInputs, int cbSize );
-
-		[DllImport( "user32.dll" )]
-		private static extern bool SetCursorPos( int X, int Y );
-
-		[DllImport( "user32.dll" )]
-		private static extern IntPtr WindowFromPoint( Point pt );
-
-		[DllImport( "user32.dll" )]
-		private static extern IntPtr GetAncestor( IntPtr hwnd, uint gaFlags );
-
-		private const uint GA_ROOT = 2;
-
-		[StructLayout( LayoutKind.Sequential )]
-		private struct INPUT {
-			public uint type;
-			public MOUSEINPUT mi;
-		}
-
-		[StructLayout( LayoutKind.Sequential )]
-		private struct MOUSEINPUT {
-			public int dx;
-			public int dy;
-			public uint mouseData;
-			public uint dwFlags;
-			public uint time;
-			public IntPtr dwExtraInfo;
-		}
-
-		private const uint INPUT_MOUSE = 0;
-		private const uint MOUSEEVENTF_LEFTDOWN = 0x0002;
-		private const uint MOUSEEVENTF_LEFTUP = 0x0004;
-		private const uint MOUSEEVENTF_RIGHTDOWN = 0x0008;
-		private const uint MOUSEEVENTF_RIGHTUP = 0x0010;
+		private const MOUSE_EVENT_FLAGS MouseEventLeftDown = MOUSE_EVENT_FLAGS.MOUSEEVENTF_LEFTDOWN;
+		private const MOUSE_EVENT_FLAGS MouseEventLeftUp = MOUSE_EVENT_FLAGS.MOUSEEVENTF_LEFTUP;
+		private const MOUSE_EVENT_FLAGS MouseEventRightDown = MOUSE_EVENT_FLAGS.MOUSEEVENTF_RIGHTDOWN;
+		private const MOUSE_EVENT_FLAGS MouseEventRightUp = MOUSE_EVENT_FLAGS.MOUSEEVENTF_RIGHTUP;
 
 		private readonly System.Windows.Forms.Timer clickTimer = new();
+		private bool buttonHeld = false;
+		private CancellationTokenSource? holdCts;
 		private readonly IndicatorForm indicator = new();
 		private readonly System.Windows.Forms.Timer hotkeyTimer = new();
 		private bool hotkeyWasDown = false;
@@ -50,7 +20,7 @@ namespace SimpleClicker {
 		private bool buttonOn = false;
 		private int hotkeyVk = (int)Keys.F6;
 		private Point lockedPos;
-		private IntPtr targetWindow = IntPtr.Zero;
+		private nint targetWindow = 0;
 		private bool capturing = false;
 		private bool emergencyStopped = false;
 		private bool hotkeySuspended = false;
@@ -71,6 +41,7 @@ namespace SimpleClicker {
 			radioLeft.CheckedChanged += ( s, e ) => SaveSettings();
 			radioHold.CheckedChanged += ( s, e ) => SaveSettings();
 			numInterval.ValueChanged += ( s, e ) => SaveSettings();
+			numHold.ValueChanged += ( s, e ) => SaveSettings();
 			checkLockPos.CheckedChanged += ( s, e ) => SaveSettings();
 			checkIndicator.CheckedChanged += ( s, e ) => SaveSettings();
 
@@ -84,8 +55,7 @@ namespace SimpleClicker {
 				if( clickTimer.Enabled && checkIndicator.Checked ) {
 					indicator.MoveNear( Cursor.Position );
 					indicator.ShowNoActivate();
-				}
-				else {
+				} else {
 					indicator.Hide();
 				}
 			};
@@ -101,7 +71,7 @@ namespace SimpleClicker {
 			if( capturing || hotkeySuspended ) {
 				return;
 			}
-			bool isDown = ( GetAsyncKeyState( hotkeyVk ) & 0x8000 ) != 0;
+			bool isDown = ( PInvoke.GetAsyncKeyState( hotkeyVk ) & 0x8000 ) != 0;
 
 			// 緊急停止中:明示的な停止操作があるまで再開しない
 			if( emergencyStopped ) {
@@ -110,8 +80,7 @@ namespace SimpleClicker {
 					if( !isDown ) {
 						ClearEmergency();
 					}
-				}
-				else {
+				} else {
 					// ホットキーを1回押したら解除(停止操作扱い。再開はもう1回)
 					if( isDown && !hotkeyWasDown ) {
 						ClearEmergency();
@@ -124,8 +93,7 @@ namespace SimpleClicker {
 			if( radioHold.Checked ) {
 				// 押している間だけ連打(開始ボタンでの連打中は維持)
 				SetClicking( buttonOn || isDown );
-			}
-			else {
+			} else {
 				// トグル:押した瞬間にON/OFF切替
 				if( isDown && !hotkeyWasDown ) {
 					toggledOn = !toggledOn;
@@ -139,10 +107,8 @@ namespace SimpleClicker {
 		private void SetClicking( bool on ) {
 			if( on && !clickTimer.Enabled ) {
 				lockedPos = Cursor.Position; // 連打開始時点の位置を記憶
-				// 位置保持時はクリック先ウインドウを記憶(終了検知用)
-				targetWindow = checkLockPos.Checked
-					? GetAncestor( WindowFromPoint( lockedPos ), GA_ROOT )
-					: IntPtr.Zero;
+											 // 位置保持時はクリック先ウインドウを記憶(終了検知用)
+				targetWindow = checkLockPos.Checked ? PInvoke.GetAncestor( PInvoke.WindowFromPoint( lockedPos ), GET_ANCESTOR_FLAGS.GA_ROOT ) : 0;
 				clickTimer.Start();
 				labelStatus.Text = "状態: 連打中";
 				labelStatus.ForeColor = Color.Red;
@@ -150,21 +116,26 @@ namespace SimpleClicker {
 					indicator.MoveNear( Cursor.Position );
 					indicator.ShowNoActivate();
 				}
-			}
-			else if( !on && clickTimer.Enabled ) {
+			} else if( !on && clickTimer.Enabled ) {
 				clickTimer.Stop();
+				// 押下中に停止した場合は待機をキャンセル(継続処理側で即時解放される)
+				holdCts?.Cancel();
 				labelStatus.Text = "状態: 停止";
 				labelStatus.ForeColor = SystemColors.ControlText;
 				indicator.Hide();
 			}
 		}
 
-		private void ClickTimer_Tick( object? sender, EventArgs e ) {
+		private async void ClickTimer_Tick( object? sender, EventArgs e ) {
+			// まだ押下中(押下時間 > クリック間隔)なら今回はスキップ
+			if( buttonHeld ) {
+				return;
+			}
+
 			// カーソル位置固定が有効なら記憶した位置へ戻す
 			if( checkLockPos.Checked ) {
 				// クリック先ウインドウが変わっていたら緊急停止
-				if( targetWindow != IntPtr.Zero
-					&& GetAncestor( WindowFromPoint( lockedPos ), GA_ROOT ) != targetWindow ) {
+				if( targetWindow != 0 && PInvoke.GetAncestor( PInvoke.WindowFromPoint( lockedPos ), GET_ANCESTOR_FLAGS.GA_ROOT ) != targetWindow ) {
 					buttonOn = false;
 					toggledOn = false;
 					emergencyStopped = true;
@@ -173,17 +144,34 @@ namespace SimpleClicker {
 					labelStatus.ForeColor = Color.Red;
 					return;
 				}
-				SetCursorPos( lockedPos.X, lockedPos.Y );
+				PInvoke.SetCursorPos( lockedPos.X, lockedPos.Y );
 			}
 
-			uint down = radioLeft.Checked ? MOUSEEVENTF_LEFTDOWN : MOUSEEVENTF_RIGHTDOWN;
-			uint up = radioLeft.Checked ? MOUSEEVENTF_LEFTUP : MOUSEEVENTF_RIGHTUP;
+			MOUSE_EVENT_FLAGS down = radioLeft.Checked ? MouseEventLeftDown : MouseEventRightDown;
+			MOUSE_EVENT_FLAGS up = radioLeft.Checked ? MouseEventLeftUp : MouseEventRightUp;
 
-			var inputs = new INPUT[] {
-				new() { type = INPUT_MOUSE, mi = new MOUSEINPUT { dwFlags = down } },
-				new() { type = INPUT_MOUSE, mi = new MOUSEINPUT { dwFlags = up } },
-			};
-			SendInput( (uint)inputs.Length, inputs, Marshal.SizeOf<INPUT>() );
+			// 押下を送信し、指定した押下時間の経過後に解放を送信する
+			// (停止操作でキャンセルされた場合も必ず解放する)
+			SendMouse( down );
+			buttonHeld = true;
+			holdCts = new CancellationTokenSource();
+			try {
+				await Task.Delay( (int)numHold.Value, holdCts.Token );
+			} catch( TaskCanceledException ) {
+				// 停止によるキャンセル:即時解放へ進む
+			} finally {
+				holdCts.Dispose();
+				holdCts = null;
+				SendMouse( up );
+				buttonHeld = false;
+			}
+		}
+
+		private static unsafe void SendMouse( MOUSE_EVENT_FLAGS flags ) {
+			Span<INPUT> inputs = stackalloc INPUT[1];
+			inputs[0].type = INPUT_TYPE.INPUT_MOUSE;
+			inputs[0].Anonymous.mi.dwFlags = flags;
+			PInvoke.SendInput( inputs, sizeof( INPUT ) );
 		}
 
 		private void RadioMode_CheckedChanged( object? sender, EventArgs e ) {
@@ -206,8 +194,7 @@ namespace SimpleClicker {
 			if( hotkeySuspended ) {
 				buttonSuspend.Text = "⏸ ホットキー受付:停止中(クリックで再開)";
 				buttonSuspend.BackColor = Color.Gold;
-			}
-			else {
+			} else {
 				buttonSuspend.Text = "▶ ホットキー受付:有効(クリックで一時中止)";
 				buttonSuspend.BackColor = Color.PaleGreen;
 			}
@@ -275,8 +262,7 @@ namespace SimpleClicker {
 			// マウスのサイドボタンを設定
 			if( e.Button == MouseButtons.XButton1 ) {
 				SetHotkey( VK_XBUTTON1 );
-			}
-			else if( e.Button == MouseButtons.XButton2 ) {
+			} else if( e.Button == MouseButtons.XButton2 ) {
 				SetHotkey( VK_XBUTTON2 );
 			}
 		}
@@ -304,6 +290,7 @@ namespace SimpleClicker {
 		private sealed class AppSettings {
 			public bool LeftClick { get; set; } = true;
 			public int Interval { get; set; } = 100;
+			public int HoldMs { get; set; } = 50;
 			public bool HoldMode { get; set; } = true;
 			public int HotkeyVk { get; set; } = (int)Keys.F6;
 			public bool LockPos { get; set; } = false;
@@ -324,13 +311,13 @@ namespace SimpleClicker {
 				radioLeft.Checked = s.LeftClick;
 				radioRight.Checked = !s.LeftClick;
 				numInterval.Value = Math.Clamp( s.Interval, numInterval.Minimum, numInterval.Maximum );
+				numHold.Value = Math.Clamp( s.HoldMs, numHold.Minimum, numHold.Maximum );
 				radioHold.Checked = s.HoldMode;
 				radioToggle.Checked = !s.HoldMode;
 				hotkeyVk = s.HotkeyVk;
 				checkLockPos.Checked = s.LockPos;
 				checkIndicator.Checked = s.ShowIndicator;
-			}
-			catch {
+			} catch {
 				// 読み込み失敗時は既定値のまま起動
 			}
 		}
@@ -340,6 +327,7 @@ namespace SimpleClicker {
 				var s = new AppSettings {
 					LeftClick = radioLeft.Checked,
 					Interval = (int)numInterval.Value,
+					HoldMs = (int)numHold.Value,
 					HoldMode = radioHold.Checked,
 					HotkeyVk = hotkeyVk,
 					LockPos = checkLockPos.Checked,
@@ -347,8 +335,7 @@ namespace SimpleClicker {
 				};
 				File.WriteAllText( SettingsPath, System.Text.Json.JsonSerializer.Serialize(
 					s, new System.Text.Json.JsonSerializerOptions { WriteIndented = true } ) );
-			}
-			catch {
+			} catch {
 				// 保存失敗は無視(次回は既定値)
 			}
 		}
