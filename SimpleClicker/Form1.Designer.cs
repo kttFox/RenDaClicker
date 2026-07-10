@@ -40,6 +40,9 @@ namespace SimpleClicker {
 			this.buttonCapture = new Button();
 			this.checkLockPos = new CheckBox();
 			this.checkIndicator = new CheckBox();
+			this.checkTargetWindow = new CheckBox();
+			this.comboWindows = new ComboBox();
+			this.buttonRefreshWindows = new Button();
 			this.labelEmergencyNote = new Label();
 			this.buttonSuspend = new Button();
 			this.labelStatus = new Label();
@@ -170,7 +173,7 @@ namespace SimpleClicker {
 			// labelHotkey
 			// 
 			this.labelHotkey.AutoSize = true;
-			this.labelHotkey.Location = new Point( 12, 254 );
+			this.labelHotkey.Location = new Point( 12, 302 );
 			this.labelHotkey.Name = "labelHotkey";
 			this.labelHotkey.Size = new Size( 53, 15 );
 			this.labelHotkey.TabIndex = 5;
@@ -178,7 +181,7 @@ namespace SimpleClicker {
 			// 
 			// textHotkey
 			// 
-			this.textHotkey.Location = new Point( 100, 251 );
+			this.textHotkey.Location = new Point( 100, 299 );
 			this.textHotkey.Name = "textHotkey";
 			this.textHotkey.ReadOnly = true;
 			this.textHotkey.Size = new Size( 120, 23 );
@@ -191,7 +194,7 @@ namespace SimpleClicker {
 			// 
 			// buttonCapture
 			// 
-			this.buttonCapture.Location = new Point( 230, 250 );
+			this.buttonCapture.Location = new Point( 230, 298 );
 			this.buttonCapture.Name = "buttonCapture";
 			this.buttonCapture.Size = new Size( 75, 25 );
 			this.buttonCapture.TabIndex = 10;
@@ -201,7 +204,7 @@ namespace SimpleClicker {
 			//
 			// buttonSuspend
 			//
-			this.buttonSuspend.Location = new Point( 12, 281 );
+			this.buttonSuspend.Location = new Point( 12, 329 );
 			this.buttonSuspend.Name = "buttonSuspend";
 			this.buttonSuspend.Size = new Size( 293, 25 );
 			this.buttonSuspend.TabIndex = 14;
@@ -231,6 +234,33 @@ namespace SimpleClicker {
 			this.checkIndicator.Text = "連打中にカーソルの近くに目印を表示する";
 			this.checkIndicator.UseVisualStyleBackColor = true;
 			//
+			// checkTargetWindow
+			//
+			this.checkTargetWindow.AutoSize = true;
+			this.checkTargetWindow.Location = new Point( 12, 245 );
+			this.checkTargetWindow.Name = "checkTargetWindow";
+			this.checkTargetWindow.Size = new Size( 200, 19 );
+			this.checkTargetWindow.TabIndex = 18;
+			this.checkTargetWindow.Text = "指定したウインドウ上でのみ連打する";
+			this.checkTargetWindow.UseVisualStyleBackColor = true;
+			//
+			// comboWindows
+			//
+			this.comboWindows.DropDownStyle = ComboBoxStyle.DropDownList;
+			this.comboWindows.Location = new Point( 28, 268 );
+			this.comboWindows.Name = "comboWindows";
+			this.comboWindows.Size = new Size( 196, 23 );
+			this.comboWindows.TabIndex = 19;
+			//
+			// buttonRefreshWindows
+			//
+			this.buttonRefreshWindows.Location = new Point( 230, 267 );
+			this.buttonRefreshWindows.Name = "buttonRefreshWindows";
+			this.buttonRefreshWindows.Size = new Size( 75, 25 );
+			this.buttonRefreshWindows.TabIndex = 20;
+			this.buttonRefreshWindows.Text = "一覧更新";
+			this.buttonRefreshWindows.UseVisualStyleBackColor = true;
+			//
 			// labelEmergencyNote
 			//
 			this.labelEmergencyNote.AutoSize = true;
@@ -245,7 +275,7 @@ namespace SimpleClicker {
 			// 
 			this.labelStatus.AutoSize = true;
 			this.labelStatus.Font = new Font( "Yu Gothic UI", 9F, FontStyle.Bold );
-			this.labelStatus.Location = new Point( 12, 324 );
+			this.labelStatus.Location = new Point( 12, 372 );
 			this.labelStatus.Name = "labelStatus";
 			this.labelStatus.Size = new Size( 61, 15 );
 			this.labelStatus.TabIndex = 7;
@@ -253,7 +283,7 @@ namespace SimpleClicker {
 			// 
 			// buttonStart
 			// 
-			this.buttonStart.Location = new Point( 150, 318 );
+			this.buttonStart.Location = new Point( 150, 366 );
 			this.buttonStart.Name = "buttonStart";
 			this.buttonStart.Size = new Size( 75, 27 );
 			this.buttonStart.TabIndex = 8;
@@ -263,7 +293,7 @@ namespace SimpleClicker {
 			// 
 			// buttonStop
 			// 
-			this.buttonStop.Location = new Point( 230, 318 );
+			this.buttonStop.Location = new Point( 230, 366 );
 			this.buttonStop.Name = "buttonStop";
 			this.buttonStop.Size = new Size( 75, 27 );
 			this.buttonStop.TabIndex = 9;
@@ -275,7 +305,7 @@ namespace SimpleClicker {
 			// 
 			this.AutoScaleDimensions = new SizeF( 7F, 15F );
 			this.AutoScaleMode = AutoScaleMode.Font;
-			this.ClientSize = new Size( 320, 356 );
+			this.ClientSize = new Size( 320, 404 );
 			this.Controls.Add( this.groupButton );
 			this.Controls.Add( this.groupMode );
 			this.Controls.Add( this.labelInterval );
@@ -289,6 +319,9 @@ namespace SimpleClicker {
 			this.Controls.Add( this.buttonCapture );
 			this.Controls.Add( this.checkLockPos );
 			this.Controls.Add( this.checkIndicator );
+			this.Controls.Add( this.checkTargetWindow );
+			this.Controls.Add( this.comboWindows );
+			this.Controls.Add( this.buttonRefreshWindows );
 			this.Controls.Add( this.labelEmergencyNote );
 			this.Controls.Add( this.buttonSuspend );
 			this.Controls.Add( this.labelStatus );
@@ -325,6 +358,9 @@ namespace SimpleClicker {
 		private Button buttonCapture;
 		private CheckBox checkLockPos;
 		private CheckBox checkIndicator;
+		private CheckBox checkTargetWindow;
+		private ComboBox comboWindows;
+		private Button buttonRefreshWindows;
 		private Label labelEmergencyNote;
 		private Button buttonSuspend;
 		private Label labelStatus;

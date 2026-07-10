@@ -1,4 +1,5 @@
 using Windows.Win32;
+using Windows.Win32.Foundation;
 using Windows.Win32.UI.Input.KeyboardAndMouse;
 using Windows.Win32.UI.WindowsAndMessaging;
 
@@ -31,9 +32,11 @@ namespace SimpleClicker {
 		public Form1() {
 			InitializeComponent();
 
+			RefreshWindowList();
 			LoadSettings();
 			textHotkey.Text = HotkeyName( hotkeyVk );
 			UpdateSuspendButton();
+			UpdateTargetControls();
 
 			clickTimer.Tick += ClickTimer_Tick;
 
@@ -44,6 +47,9 @@ namespace SimpleClicker {
 			numHold.ValueChanged += ( s, e ) => SaveSettings();
 			checkLockPos.CheckedChanged += ( s, e ) => SaveSettings();
 			checkIndicator.CheckedChanged += ( s, e ) => SaveSettings();
+			checkTargetWindow.CheckedChanged += ( s, e ) => { UpdateTargetControls(); SaveSettings(); };
+			comboWindows.SelectedIndexChanged += ( s, e ) => SaveSettings();
+			buttonRefreshWindows.Click += ( s, e ) => RefreshWindowList();
 
 			hotkeyTimer.Interval = 15;
 			hotkeyTimer.Tick += HotkeyTimer_Tick;
@@ -104,7 +110,60 @@ namespace SimpleClicker {
 			hotkeyWasDown = isDown;
 		}
 
+		// ---- 対象ウインドウの限定 ----
+
+		private sealed record WindowItem( nint Handle, string Title ) {
+			public override string ToString() => Title;
+		}
+
+		private void RefreshWindowList() {
+			var items = new List<WindowItem>();
+			nint self = Handle;
+			PInvoke.EnumWindows( ( hwnd, _ ) => {
+				if( hwnd != self && PInvoke.IsWindowVisible( hwnd ) ) {
+					Span<char> buf = stackalloc char[256];
+					int len = PInvoke.GetWindowText( hwnd, buf );
+					if( len > 0 ) {
+						items.Add( new WindowItem( hwnd, buf[..len].ToString() ) );
+					}
+				}
+				return true;
+			}, 0 );
+
+			var prev = comboWindows.SelectedItem as WindowItem;
+			comboWindows.Items.Clear();
+			foreach( var item in items ) {
+				comboWindows.Items.Add( item );
+			}
+			// 更新前の選択を可能な限り維持(ハンドル一致→タイトル一致の順)
+			if( prev != null ) {
+				var match = items.FirstOrDefault( i => i.Handle == prev.Handle )
+					?? items.FirstOrDefault( i => i.Title == prev.Title );
+				comboWindows.SelectedItem = match;
+			}
+		}
+
+		private void UpdateTargetControls() {
+			comboWindows.Enabled = checkTargetWindow.Checked;
+			buttonRefreshWindows.Enabled = checkTargetWindow.Checked;
+		}
+
+		// 指定位置が対象ウインドウ上かどうか(限定が無効なら常にtrue)
+		private bool IsOnTargetWindow( Point pos ) {
+			if( !checkTargetWindow.Checked ) {
+				return true;
+			}
+			if( comboWindows.SelectedItem is not WindowItem item || !PInvoke.IsWindow( new HWND( item.Handle ) ) ) {
+				return false; // 未選択・対象が閉じられた場合は連打しない
+			}
+			return PInvoke.GetAncestor( PInvoke.WindowFromPoint( pos ), GET_ANCESTOR_FLAGS.GA_ROOT ) == item.Handle;
+		}
+
 		private void SetClicking( bool on ) {
+			// 対象ウインドウ限定時:対象上でなければ連打を開始しない
+			if( on && !clickTimer.Enabled && !IsOnTargetWindow( Cursor.Position ) ) {
+				return;
+			}
 			if( on && !clickTimer.Enabled ) {
 				lockedPos = Cursor.Position; // 連打開始時点の位置を記憶
 											 // 位置保持時はクリック先ウインドウを記憶(終了検知用)
@@ -129,6 +188,14 @@ namespace SimpleClicker {
 		private async void ClickTimer_Tick( object? sender, EventArgs e ) {
 			// まだ押下中(押下時間 > クリック間隔)なら今回はスキップ
 			if( buttonHeld ) {
+				return;
+			}
+
+			// 対象ウインドウ限定時:クリック先が対象から外れたら停止
+			if( !IsOnTargetWindow( checkLockPos.Checked ? lockedPos : Cursor.Position ) ) {
+				buttonOn = false;
+				toggledOn = false;
+				SetClicking( false );
 				return;
 			}
 
@@ -295,6 +362,8 @@ namespace SimpleClicker {
 			public int HotkeyVk { get; set; } = (int)Keys.F6;
 			public bool LockPos { get; set; } = false;
 			public bool ShowIndicator { get; set; } = true;
+			public bool LimitToWindow { get; set; } = false;
+			public string TargetWindowTitle { get; set; } = "";
 		}
 
 		private static string SettingsPath => Path.Combine( AppContext.BaseDirectory, "settings.json" );
@@ -317,6 +386,12 @@ namespace SimpleClicker {
 				hotkeyVk = s.HotkeyVk;
 				checkLockPos.Checked = s.LockPos;
 				checkIndicator.Checked = s.ShowIndicator;
+				checkTargetWindow.Checked = s.LimitToWindow;
+				// 前回の対象ウインドウをタイトル一致で復元
+				if( !string.IsNullOrEmpty( s.TargetWindowTitle ) ) {
+					comboWindows.SelectedItem = comboWindows.Items.OfType<WindowItem>()
+						.FirstOrDefault( i => i.Title == s.TargetWindowTitle );
+				}
 			} catch {
 				// 読み込み失敗時は既定値のまま起動
 			}
@@ -332,6 +407,8 @@ namespace SimpleClicker {
 					HotkeyVk = hotkeyVk,
 					LockPos = checkLockPos.Checked,
 					ShowIndicator = checkIndicator.Checked,
+					LimitToWindow = checkTargetWindow.Checked,
+					TargetWindowTitle = ( comboWindows.SelectedItem as WindowItem )?.Title ?? "",
 				};
 				File.WriteAllText( SettingsPath, System.Text.Json.JsonSerializer.Serialize(
 					s, new System.Text.Json.JsonSerializerOptions { WriteIndented = true } ) );
