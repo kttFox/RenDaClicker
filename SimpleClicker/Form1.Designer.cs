@@ -188,6 +188,7 @@ namespace SimpleClicker {
 			this.textHotkey.TabIndex = 6;
 			this.textHotkey.TextAlign = HorizontalAlignment.Center;
 			this.textHotkey.KeyDown +=  this.TextHotkey_KeyDown ;
+			this.textHotkey.KeyUp +=  this.TextHotkey_KeyUp ;
 			this.textHotkey.Leave +=  this.TextHotkey_Leave ;
 			this.textHotkey.MouseDown +=  this.TextHotkey_MouseDown ;
 			this.textHotkey.PreviewKeyDown +=  this.TextHotkey_PreviewKeyDown ;

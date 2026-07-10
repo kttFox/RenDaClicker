@@ -20,6 +20,7 @@ namespace SimpleClicker {
 		private bool toggledOn = false;
 		private bool buttonOn = false;
 		private int hotkeyVk = (int)Keys.F6;
+		private Keys hotkeyMods = Keys.None; // Control / Shift / Alt のフラグ
 		private Point lockedPos;
 		private nint targetWindow = 0;
 		private bool capturing = false;
@@ -34,7 +35,7 @@ namespace SimpleClicker {
 
 			RefreshWindowList();
 			LoadSettings();
-			textHotkey.Text = HotkeyName( hotkeyVk );
+			textHotkey.Text = HotkeyName( hotkeyVk, hotkeyMods );
 			UpdateSuspendButton();
 			UpdateTargetControls();
 
@@ -77,7 +78,7 @@ namespace SimpleClicker {
 			if( capturing || hotkeySuspended ) {
 				return;
 			}
-			bool isDown = ( PInvoke.GetAsyncKeyState( hotkeyVk ) & 0x8000 ) != 0;
+			bool isDown = IsHotkeyDown();
 
 			// 緊急停止中:明示的な停止操作があるまで再開しない
 			if( emergencyStopped ) {
@@ -108,6 +109,31 @@ namespace SimpleClicker {
 				}
 			}
 			hotkeyWasDown = isDown;
+		}
+
+		// ホットキー(修飾キー含む)の押下判定
+		private bool IsHotkeyDown() {
+			if( ( PInvoke.GetAsyncKeyState( hotkeyVk ) & 0x8000 ) == 0 ) {
+				return false;
+			}
+			// 修飾キーの状態が設定と一致すること(不要な修飾キーが押されていたら不成立)
+			// ただしホットキー本体が修飾キー自身の場合はそのキーを判定から除外
+			foreach( var (mod, vk) in new[] {
+				(Keys.Shift, 0x10 /*VK_SHIFT*/),
+				(Keys.Control, 0x11 /*VK_CONTROL*/),
+				(Keys.Alt, 0x12 /*VK_MENU*/),
+			} ) {
+				int left = 0xA0 + ( vk - 0x10 ) * 2;  // VK_LSHIFT / VK_LCONTROL / VK_LMENU
+				if( hotkeyVk == vk || hotkeyVk == left || hotkeyVk == left + 1 ) {
+					continue; // 本体が該当修飾キー(左右キー含む)なら除外
+				}
+				bool required = hotkeyMods.HasFlag( mod );
+				bool down = ( PInvoke.GetAsyncKeyState( vk ) & 0x8000 ) != 0;
+				if( required != down ) {
+					return false;
+				}
+			}
+			return true;
 		}
 
 		// ---- 対象ウインドウの限定 ----
@@ -305,7 +331,7 @@ namespace SimpleClicker {
 		private void TextHotkey_Leave( object? sender, EventArgs e ) {
 			// フォーカスが外れたらキャプチャ中止
 			capturing = false;
-			textHotkey.Text = HotkeyName( hotkeyVk );
+			textHotkey.Text = HotkeyName( hotkeyVk, hotkeyMods );
 		}
 
 		private void TextHotkey_KeyDown( object? sender, KeyEventArgs e ) {
@@ -313,8 +339,24 @@ namespace SimpleClicker {
 				return;
 			}
 			e.SuppressKeyPress = true;
-			// 修飾キー単体は無視しない(Shift等も設定可能)
-			SetHotkey( (int)e.KeyCode );
+			// 修飾キー単体の押下ではまだ確定しない(組み合わせ入力の途中の可能性)
+			// → 押下中の修飾キーを表示だけ更新し、確定は KeyUp か通常キー押下で行う
+			if( e.KeyCode is Keys.ShiftKey or Keys.ControlKey or Keys.Menu ) {
+				textHotkey.Text = HotkeyName( 0, e.Modifiers ) + "…";
+				return;
+			}
+			// 通常キー:押されている修飾キーとの組み合わせで確定
+			SetHotkey( (int)e.KeyCode, e.Modifiers );
+		}
+
+		private void TextHotkey_KeyUp( object? sender, KeyEventArgs e ) {
+			if( !capturing ) {
+				return;
+			}
+			// 修飾キーを他のキーと組み合わせず離した場合は、修飾キー単体として確定
+			if( e.KeyCode is Keys.ShiftKey or Keys.ControlKey or Keys.Menu ) {
+				SetHotkey( (int)e.KeyCode );
+			}
 		}
 
 		private void TextHotkey_PreviewKeyDown( object? sender, PreviewKeyDownEventArgs e ) {
@@ -326,17 +368,19 @@ namespace SimpleClicker {
 			if( !capturing ) {
 				return;
 			}
-			// マウスのサイドボタンを設定
+			// マウスのサイドボタンを設定(押下中の修飾キーとの組み合わせも可)
+			Keys mods = ModifierKeys & ( Keys.Control | Keys.Shift | Keys.Alt );
 			if( e.Button == MouseButtons.XButton1 ) {
-				SetHotkey( VK_XBUTTON1 );
+				SetHotkey( VK_XBUTTON1, mods );
 			} else if( e.Button == MouseButtons.XButton2 ) {
-				SetHotkey( VK_XBUTTON2 );
+				SetHotkey( VK_XBUTTON2, mods );
 			}
 		}
 
-		private void SetHotkey( int vk ) {
+		private void SetHotkey( int vk, Keys mods = Keys.None ) {
 			hotkeyVk = vk;
-			textHotkey.Text = HotkeyName( vk );
+			hotkeyMods = mods;
+			textHotkey.Text = HotkeyName( vk, mods );
 			// キャプチャ終了(フォーカスを外す)
 			ActiveControl = null;
 			capturing = false;
@@ -344,12 +388,18 @@ namespace SimpleClicker {
 			SaveSettings();
 		}
 
-		private static string HotkeyName( int vk ) {
-			return vk switch {
+		private static string HotkeyName( int vk, Keys mods ) {
+			string name = vk switch {
+				0 => "",
 				VK_XBUTTON1 => "サイドボタン1",
 				VK_XBUTTON2 => "サイドボタン2",
 				_ => ( (Keys)vk ).ToString(),
 			};
+			string prefix = "";
+			if( mods.HasFlag( Keys.Control ) ) prefix += "Ctrl+";
+			if( mods.HasFlag( Keys.Shift ) ) prefix += "Shift+";
+			if( mods.HasFlag( Keys.Alt ) ) prefix += "Alt+";
+			return prefix + name;
 		}
 
 		// ---- 設定の保存・復元 ----
@@ -360,6 +410,7 @@ namespace SimpleClicker {
 			public int HoldMs { get; set; } = 50;
 			public bool HoldMode { get; set; } = true;
 			public int HotkeyVk { get; set; } = (int)Keys.F6;
+			public int HotkeyMods { get; set; } = 0;
 			public bool LockPos { get; set; } = false;
 			public bool ShowIndicator { get; set; } = true;
 			public bool LimitToWindow { get; set; } = false;
@@ -384,6 +435,7 @@ namespace SimpleClicker {
 				radioHold.Checked = s.HoldMode;
 				radioToggle.Checked = !s.HoldMode;
 				hotkeyVk = s.HotkeyVk;
+				hotkeyMods = (Keys)s.HotkeyMods & ( Keys.Control | Keys.Shift | Keys.Alt );
 				checkLockPos.Checked = s.LockPos;
 				checkIndicator.Checked = s.ShowIndicator;
 				checkTargetWindow.Checked = s.LimitToWindow;
@@ -405,6 +457,7 @@ namespace SimpleClicker {
 					HoldMs = (int)numHold.Value,
 					HoldMode = radioHold.Checked,
 					HotkeyVk = hotkeyVk,
+					HotkeyMods = (int)hotkeyMods,
 					LockPos = checkLockPos.Checked,
 					ShowIndicator = checkIndicator.Checked,
 					LimitToWindow = checkTargetWindow.Checked,
