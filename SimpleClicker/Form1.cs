@@ -116,6 +116,10 @@ namespace SimpleClicker {
 			if( ( PInvoke.GetAsyncKeyState( hotkeyVk ) & 0x8000 ) == 0 ) {
 				return false;
 			}
+			// 修飾キー未設定なら修飾キーの状態は見ない(Shift等が押されていても発動)
+			if( hotkeyMods == Keys.None ) {
+				return true;
+			}
 			// 修飾キーの状態が設定と一致すること(不要な修飾キーが押されていたら不成立)
 			// ただしホットキー本体が修飾キー自身の場合はそのキーを判定から除外
 			foreach( var (mod, vk) in new[] {
