@@ -165,11 +165,9 @@ namespace SimpleClicker {
 			foreach( var item in items ) {
 				comboWindows.Items.Add( item );
 			}
-			// 更新前の選択を可能な限り維持(ハンドル一致→タイトル一致の順)
+			// 更新前の選択を可能な限り維持(判定はタイトルのみのためタイトル一致で復元)
 			if( prev != null ) {
-				var match = items.FirstOrDefault( i => i.Handle == prev.Handle )
-					?? items.FirstOrDefault( i => i.Title == prev.Title );
-				comboWindows.SelectedItem = match;
+				comboWindows.SelectedItem = items.FirstOrDefault( i => i.Title == prev.Title );
 			}
 		}
 
@@ -179,14 +177,18 @@ namespace SimpleClicker {
 		}
 
 		// 指定位置が対象ウインドウ上かどうか(限定が無効なら常にtrue)
+		// タイトルのみで判定するため、対象が一度閉じられて再度開かれた(ハンドルが変わった)場合も有効
 		private bool IsOnTargetWindow( Point pos ) {
 			if( !checkTargetWindow.Checked ) {
 				return true;
 			}
-			if( comboWindows.SelectedItem is not WindowItem item || !PInvoke.IsWindow( new HWND( item.Handle ) ) ) {
-				return false; // 未選択・対象が閉じられた場合は連打しない
+			if( comboWindows.SelectedItem is not WindowItem item ) {
+				return false; // 未選択の場合は連打しない
 			}
-			return PInvoke.GetAncestor( PInvoke.WindowFromPoint( pos ), GET_ANCESTOR_FLAGS.GA_ROOT ) == item.Handle;
+			HWND root = PInvoke.GetAncestor( PInvoke.WindowFromPoint( pos ), GET_ANCESTOR_FLAGS.GA_ROOT );
+			Span<char> buf = stackalloc char[256];
+			int len = PInvoke.GetWindowText( root, buf );
+			return len > 0 && buf[..len].SequenceEqual( item.Title );
 		}
 
 		private void SetClicking( bool on ) {
