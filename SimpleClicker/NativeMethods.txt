@@ -1,9 +1,0 @@
-GetAsyncKeyState
-SendInput
-SetCursorPos
-WindowFromPoint
-GetAncestor
-EnumWindows
-IsWindowVisible
-GetWindowText
-IsWindow
