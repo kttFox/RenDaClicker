@@ -15,6 +15,9 @@ namespace RenDaClicker {
 		public int HotkeyMods { get; set; } = 0;
 		public bool LockPos { get; set; } = false;
 
+		/// <summary>一時的に無効化中か。無効中はホットキーに反応しない。</summary>
+		public bool Disabled { get; set; } = false;
+
 		/// <summary>直前のTickでホットキーが押されていたか(押した瞬間の検出用)。</summary>
 		[JsonIgnore]
 		public bool HotkeyWasDown = true;

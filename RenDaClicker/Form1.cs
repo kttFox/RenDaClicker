@@ -50,6 +50,7 @@ namespace RenDaClicker {
 			buttonAdd.Click += ButtonAdd_Click;
 			buttonEdit.Click += ButtonEdit_Click;
 			buttonDelete.Click += ButtonDelete_Click;
+			buttonDisable.Click += ButtonDisable_Click;
 			buttonUp.Click += ( s, e ) => MoveProfile( -1 );
 			buttonDown.Click += ( s, e ) => MoveProfile( +1 );
 			listProfiles.DoubleClick += ButtonEdit_Click;
@@ -107,6 +108,12 @@ namespace RenDaClicker {
 			Profile? pressed = null;
 			bool anyDown = false;
 			foreach( var p in profiles ) {
+				if( p.Disabled ) {
+					// 押しっぱなしのまま有効に戻しても即反応しないよう押下扱いにしておく
+					p.HotkeyIsDown = false;
+					p.HotkeyWasDown = true;
+					continue;
+				}
 				bool isDown = p.IsHotkeyDown();
 				if( isDown && !p.HotkeyWasDown ) {
 					// 同時に成立した場合は修飾キーの多い方を優先(Tab より Shift+Tab)
@@ -173,7 +180,7 @@ namespace RenDaClicker {
 			listProfiles.Items.Clear();
 			foreach( var p in profiles ) {
 				listProfiles.Items.Add( new ListViewItem( [
-					p.Name,
+					p.Disabled ? $"{p.Name}(無効)" : p.Name,
 					p.HotkeyText,
 					p.LeftClick ? "左" : "右",
 					p.HoldMode ? "押下中" : "トグル",
@@ -190,11 +197,12 @@ namespace RenDaClicker {
 			UpdateActiveHighlight();
 		}
 
-		/// <summary>連打中のプロファイルの行を黄色で示す。</summary>
+		/// <summary>連打中のプロファイルの行を黄色で、無効のプロファイルを灰色で示す。</summary>
 		private void UpdateActiveHighlight() {
 			for( int i = 0; i < listProfiles.Items.Count && i < profiles.Count; i++ ) {
 				bool active = ReferenceEquals( profiles[i], activeProfile );
 				listProfiles.Items[i].BackColor = active ? Color.Gold : listProfiles.BackColor;
+				listProfiles.Items[i].ForeColor = profiles[i].Disabled ? SystemColors.GrayText : listProfiles.ForeColor;
 			}
 		}
 
@@ -203,6 +211,8 @@ namespace RenDaClicker {
 			buttonEdit.Enabled = has;
 			buttonDelete.Enabled = has && profiles.Count > 1;
 			int index = has ? listProfiles.SelectedIndices[0] : -1;
+			buttonDisable.Enabled = has;
+			buttonDisable.Text = has && profiles[index].Disabled ? "有効" : "無効";
 			buttonUp.Enabled = index > 0;
 			buttonDown.Enabled = index >= 0 && index < profiles.Count - 1;
 		}
@@ -222,6 +232,20 @@ namespace RenDaClicker {
 			RefreshProfileList();
 			listProfiles.Items[moved].Selected = true;
 			listProfiles.Items[moved].Focused = true;
+			SaveSettings();
+		}
+
+		/// <summary>選択中のプロファイルの無効/有効を切り替える。</summary>
+		private void ButtonDisable_Click( object? sender, EventArgs e ) {
+			if( listProfiles.SelectedIndices.Count == 0 ) {
+				return;
+			}
+			var profile = profiles[listProfiles.SelectedIndices[0]];
+			if( ReferenceEquals( profile, activeProfile ) ) {
+				StopAll();
+			}
+			profile.Disabled = !profile.Disabled;
+			RefreshProfileList();
 			SaveSettings();
 		}
 

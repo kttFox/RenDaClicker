@@ -37,6 +37,7 @@ namespace RenDaClicker {
 			this.buttonAdd = new Button();
 			this.buttonEdit = new Button();
 			this.buttonDelete = new Button();
+			this.buttonDisable = new Button();
 			this.buttonUp = new Button();
 			this.buttonDown = new Button();
 			this.checkIndicator = new CheckBox();
@@ -53,7 +54,7 @@ namespace RenDaClicker {
 			this.panelMarkPreviewLeft.Location = new Point( 239, 210 );
 			this.panelMarkPreviewLeft.Name = "panelMarkPreviewLeft";
 			this.panelMarkPreviewLeft.Size = new Size( 16, 16 );
-			this.panelMarkPreviewLeft.TabIndex = 5;
+			this.panelMarkPreviewLeft.TabIndex = 13;
 			this.toolTip.SetToolTip( this.panelMarkPreviewLeft, "左クリックの連打中に表示される目印です" );
 			// 
 			// panelMarkPreviewRight
@@ -62,7 +63,7 @@ namespace RenDaClicker {
 			this.panelMarkPreviewRight.Location = new Point( 256, 210 );
 			this.panelMarkPreviewRight.Name = "panelMarkPreviewRight";
 			this.panelMarkPreviewRight.Size = new Size( 16, 16 );
-			this.panelMarkPreviewRight.TabIndex = 5;
+			this.panelMarkPreviewRight.TabIndex = 14;
 			this.toolTip.SetToolTip( this.panelMarkPreviewRight, "右クリックの連打中に表示される目印です" );
 			// 
 			// listProfiles
@@ -141,25 +142,36 @@ namespace RenDaClicker {
 			this.buttonDelete.TabIndex = 3;
 			this.buttonDelete.Text = "削除...";
 			this.buttonDelete.UseVisualStyleBackColor = true;
-			//
+			// 
+			// buttonDisable
+			// 
+			this.buttonDisable.Anchor =  AnchorStyles.Bottom  |  AnchorStyles.Left ;
+			this.buttonDisable.Location = new Point( 255, 175 );
+			this.buttonDisable.Name = "buttonDisable";
+			this.buttonDisable.Size = new Size( 51, 25 );
+			this.buttonDisable.TabIndex = 4;
+			this.buttonDisable.Text = "無効";
+			this.buttonDisable.UseVisualStyleBackColor = true;
+			this.toolTip.SetToolTip( this.buttonDisable, "選択中のプロファイルのホットキーを一時的に無効/有効にします" );
+			// 
 			// buttonUp
-			//
+			// 
 			this.buttonUp.Anchor =  AnchorStyles.Bottom  |  AnchorStyles.Right ;
 			this.buttonUp.Location = new Point( 312, 175 );
 			this.buttonUp.Name = "buttonUp";
 			this.buttonUp.Size = new Size( 33, 25 );
-			this.buttonUp.TabIndex = 4;
+			this.buttonUp.TabIndex = 5;
 			this.buttonUp.Text = "▲";
 			this.buttonUp.UseVisualStyleBackColor = true;
 			this.toolTip.SetToolTip( this.buttonUp, "選択中のプロファイルを上へ移動します(上にあるほど優先)" );
-			//
+			// 
 			// buttonDown
-			//
+			// 
 			this.buttonDown.Anchor =  AnchorStyles.Bottom  |  AnchorStyles.Right ;
 			this.buttonDown.Location = new Point( 349, 175 );
 			this.buttonDown.Name = "buttonDown";
 			this.buttonDown.Size = new Size( 33, 25 );
-			this.buttonDown.TabIndex = 5;
+			this.buttonDown.TabIndex = 6;
 			this.buttonDown.Text = "▼";
 			this.buttonDown.UseVisualStyleBackColor = true;
 			this.toolTip.SetToolTip( this.buttonDown, "選択中のプロファイルを下へ移動します" );
@@ -173,7 +185,7 @@ namespace RenDaClicker {
 			this.checkIndicator.Location = new Point( 12, 212 );
 			this.checkIndicator.Name = "checkIndicator";
 			this.checkIndicator.Size = new Size( 221, 19 );
-			this.checkIndicator.TabIndex = 4;
+			this.checkIndicator.TabIndex = 7;
 			this.checkIndicator.Text = "連打中にカーソルの近くに目印を表示する";
 			this.checkIndicator.UseVisualStyleBackColor = true;
 			// 
@@ -184,7 +196,7 @@ namespace RenDaClicker {
 			this.checkTargetWindow.Location = new Point( 12, 237 );
 			this.checkTargetWindow.Name = "checkTargetWindow";
 			this.checkTargetWindow.Size = new Size( 197, 19 );
-			this.checkTargetWindow.TabIndex = 5;
+			this.checkTargetWindow.TabIndex = 8;
 			this.checkTargetWindow.Text = "指定したウインドウ上でのみ連打する";
 			this.checkTargetWindow.UseVisualStyleBackColor = true;
 			// 
@@ -195,7 +207,7 @@ namespace RenDaClicker {
 			this.comboWindows.Location = new Point( 28, 260 );
 			this.comboWindows.Name = "comboWindows";
 			this.comboWindows.Size = new Size( 258, 23 );
-			this.comboWindows.TabIndex = 6;
+			this.comboWindows.TabIndex = 9;
 			// 
 			// buttonRefreshWindows
 			// 
@@ -203,7 +215,7 @@ namespace RenDaClicker {
 			this.buttonRefreshWindows.Location = new Point( 292, 259 );
 			this.buttonRefreshWindows.Name = "buttonRefreshWindows";
 			this.buttonRefreshWindows.Size = new Size( 90, 25 );
-			this.buttonRefreshWindows.TabIndex = 7;
+			this.buttonRefreshWindows.TabIndex = 10;
 			this.buttonRefreshWindows.Text = "一覧更新";
 			this.buttonRefreshWindows.UseVisualStyleBackColor = true;
 			// 
@@ -215,7 +227,7 @@ namespace RenDaClicker {
 			this.labelTargetNote.Location = new Point( 28, 290 );
 			this.labelTargetNote.Name = "labelTargetNote";
 			this.labelTargetNote.Size = new Size( 252, 30 );
-			this.labelTargetNote.TabIndex = 8;
+			this.labelTargetNote.TabIndex = 11;
 			this.labelTargetNote.Text = "※クリック先のウインドウが変わると緊急停止します。\r\n    再開するにはホットキーをもう一度押してください。";
 			// 
 			// buttonSuspend
@@ -224,7 +236,7 @@ namespace RenDaClicker {
 			this.buttonSuspend.Location = new Point( 12, 335 );
 			this.buttonSuspend.Name = "buttonSuspend";
 			this.buttonSuspend.Size = new Size( 370, 42 );
-			this.buttonSuspend.TabIndex = 9;
+			this.buttonSuspend.TabIndex = 12;
 			this.buttonSuspend.Text = "ホットキー受付を一時中止";
 			this.buttonSuspend.UseVisualStyleBackColor = true;
 			this.buttonSuspend.Click +=  this.ButtonSuspend_Click ;
@@ -238,6 +250,7 @@ namespace RenDaClicker {
 			this.Controls.Add( this.buttonAdd );
 			this.Controls.Add( this.buttonEdit );
 			this.Controls.Add( this.buttonDelete );
+			this.Controls.Add( this.buttonDisable );
 			this.Controls.Add( this.buttonUp );
 			this.Controls.Add( this.buttonDown );
 			this.Controls.Add( this.checkIndicator );
@@ -267,6 +280,7 @@ namespace RenDaClicker {
 		private Button buttonAdd;
 		private Button buttonEdit;
 		private Button buttonDelete;
+		private Button buttonDisable;
 		private Button buttonUp;
 		private Button buttonDown;
 		private CheckBox checkIndicator;
