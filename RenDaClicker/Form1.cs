@@ -56,6 +56,7 @@ namespace RenDaClicker {
 			listProfiles.DoubleClick += ButtonEdit_Click;
 			listProfiles.SelectedIndexChanged += ( s, e ) => UpdateProfileButtons();
 
+			FormClosing += ( s, e ) => SaveSettings();
 			// 設定変更のたびにリアルタイム保存
 			checkTargetWindow.CheckedChanged += ( s, e ) => { UpdateTargetControls(); SaveSettings(); };
 			comboWindows.SelectedIndexChanged += ( s, e ) => SaveSettings();
@@ -488,6 +489,11 @@ namespace RenDaClicker {
 			public bool ShowIndicator { get; set; } = true;
 			public bool LimitToWindow { get; set; } = false;
 			public string TargetWindowTitle { get; set; } = "";
+			public int? WindowX { get; set; } = null;
+			public int? WindowY { get; set; } = null;
+			public int WindowWidth { get; set; } = 0;
+			public int WindowHeight { get; set; } = 0;
+			public List<int> ColumnWidths { get; set; } = [];
 		}
 
 		private static string SettingsPath => Path.Combine( AppContext.BaseDirectory, "settings.json" );
@@ -505,6 +511,22 @@ namespace RenDaClicker {
 				profiles.AddRange( s.Profiles );
 				checkIndicator.Checked = s.ShowIndicator;
 				checkTargetWindow.Checked = s.LimitToWindow;
+				if( s.WindowWidth > 0 && s.WindowHeight > 0 ) {
+					Size = new Size( s.WindowWidth, s.WindowHeight );
+				}
+				// 表示前に前回の位置へ移動(画面外になる場合は既定位置のまま)
+				if( s.WindowX is int x && s.WindowY is int y ) {
+					var bounds = new Rectangle( x, y, Width, Height );
+					if( Screen.AllScreens.Any( sc => sc.WorkingArea.IntersectsWith( bounds ) ) ) {
+						StartPosition = FormStartPosition.Manual;
+						Location = bounds.Location;
+					}
+				}
+				for( int i = 0; i < s.ColumnWidths.Count && i < listProfiles.Columns.Count; i++ ) {
+					if( s.ColumnWidths[i] > 0 ) {
+						listProfiles.Columns[i].Width = s.ColumnWidths[i];
+					}
+				}
 				// 前回の対象ウインドウをタイトル一致で復元
 				if( !string.IsNullOrEmpty( s.TargetWindowTitle ) ) {
 					comboWindows.SelectedItem = comboWindows.Items.OfType<WindowItem>()
@@ -522,6 +544,12 @@ namespace RenDaClicker {
 					ShowIndicator = checkIndicator.Checked,
 					LimitToWindow = checkTargetWindow.Checked,
 					TargetWindowTitle = ( comboWindows.SelectedItem as WindowItem )?.Title ?? "",
+					// 最小化・最大化中は通常時のサイズを保存
+					WindowX = ( WindowState == FormWindowState.Normal ? Location : RestoreBounds.Location ).X,
+					WindowY = ( WindowState == FormWindowState.Normal ? Location : RestoreBounds.Location ).Y,
+					WindowWidth = ( WindowState == FormWindowState.Normal ? Size : RestoreBounds.Size ).Width,
+					WindowHeight = ( WindowState == FormWindowState.Normal ? Size : RestoreBounds.Size ).Height,
+					ColumnWidths = listProfiles.Columns.Cast<ColumnHeader>().Select( c => c.Width ).ToList(),
 				};
 				File.WriteAllText( SettingsPath, System.Text.Json.JsonSerializer.Serialize(
 					s, new System.Text.Json.JsonSerializerOptions { WriteIndented = true } ) );

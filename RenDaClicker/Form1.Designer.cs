@@ -27,6 +27,9 @@ namespace RenDaClicker {
 			this.toolTip = new ToolTip( this.components );
 			this.panelMarkPreviewLeft = new Panel();
 			this.panelMarkPreviewRight = new Panel();
+			this.buttonDisable = new Button();
+			this.buttonUp = new Button();
+			this.buttonDown = new Button();
 			this.listProfiles = new ListViewEx();
 			this.columnName = new ColumnHeader();
 			this.columnHotkey = new ColumnHeader();
@@ -37,9 +40,6 @@ namespace RenDaClicker {
 			this.buttonAdd = new Button();
 			this.buttonEdit = new Button();
 			this.buttonDelete = new Button();
-			this.buttonDisable = new Button();
-			this.buttonUp = new Button();
-			this.buttonDown = new Button();
 			this.checkIndicator = new CheckBox();
 			this.checkTargetWindow = new CheckBox();
 			this.comboWindows = new ComboBox();
@@ -65,6 +65,39 @@ namespace RenDaClicker {
 			this.panelMarkPreviewRight.Size = new Size( 16, 16 );
 			this.panelMarkPreviewRight.TabIndex = 14;
 			this.toolTip.SetToolTip( this.panelMarkPreviewRight, "右クリックの連打中に表示される目印です" );
+			// 
+			// buttonDisable
+			// 
+			this.buttonDisable.Anchor =  AnchorStyles.Bottom  |  AnchorStyles.Left ;
+			this.buttonDisable.Location = new Point( 255, 175 );
+			this.buttonDisable.Name = "buttonDisable";
+			this.buttonDisable.Size = new Size( 51, 25 );
+			this.buttonDisable.TabIndex = 4;
+			this.buttonDisable.Text = "無効";
+			this.toolTip.SetToolTip( this.buttonDisable, "選択中のプロファイルのホットキーを一時的に無効/有効にします" );
+			this.buttonDisable.UseVisualStyleBackColor = true;
+			// 
+			// buttonUp
+			// 
+			this.buttonUp.Anchor =  AnchorStyles.Bottom  |  AnchorStyles.Right ;
+			this.buttonUp.Location = new Point( 312, 175 );
+			this.buttonUp.Name = "buttonUp";
+			this.buttonUp.Size = new Size( 33, 25 );
+			this.buttonUp.TabIndex = 5;
+			this.buttonUp.Text = "▲";
+			this.toolTip.SetToolTip( this.buttonUp, "選択中のプロファイルを上へ移動します(上にあるほど優先)" );
+			this.buttonUp.UseVisualStyleBackColor = true;
+			// 
+			// buttonDown
+			// 
+			this.buttonDown.Anchor =  AnchorStyles.Bottom  |  AnchorStyles.Right ;
+			this.buttonDown.Location = new Point( 349, 175 );
+			this.buttonDown.Name = "buttonDown";
+			this.buttonDown.Size = new Size( 33, 25 );
+			this.buttonDown.TabIndex = 6;
+			this.buttonDown.Text = "▼";
+			this.toolTip.SetToolTip( this.buttonDown, "選択中のプロファイルを下へ移動します" );
+			this.buttonDown.UseVisualStyleBackColor = true;
 			// 
 			// listProfiles
 			// 
@@ -143,39 +176,6 @@ namespace RenDaClicker {
 			this.buttonDelete.Text = "削除...";
 			this.buttonDelete.UseVisualStyleBackColor = true;
 			// 
-			// buttonDisable
-			// 
-			this.buttonDisable.Anchor =  AnchorStyles.Bottom  |  AnchorStyles.Left ;
-			this.buttonDisable.Location = new Point( 255, 175 );
-			this.buttonDisable.Name = "buttonDisable";
-			this.buttonDisable.Size = new Size( 51, 25 );
-			this.buttonDisable.TabIndex = 4;
-			this.buttonDisable.Text = "無効";
-			this.buttonDisable.UseVisualStyleBackColor = true;
-			this.toolTip.SetToolTip( this.buttonDisable, "選択中のプロファイルのホットキーを一時的に無効/有効にします" );
-			// 
-			// buttonUp
-			// 
-			this.buttonUp.Anchor =  AnchorStyles.Bottom  |  AnchorStyles.Right ;
-			this.buttonUp.Location = new Point( 312, 175 );
-			this.buttonUp.Name = "buttonUp";
-			this.buttonUp.Size = new Size( 33, 25 );
-			this.buttonUp.TabIndex = 5;
-			this.buttonUp.Text = "▲";
-			this.buttonUp.UseVisualStyleBackColor = true;
-			this.toolTip.SetToolTip( this.buttonUp, "選択中のプロファイルを上へ移動します(上にあるほど優先)" );
-			// 
-			// buttonDown
-			// 
-			this.buttonDown.Anchor =  AnchorStyles.Bottom  |  AnchorStyles.Right ;
-			this.buttonDown.Location = new Point( 349, 175 );
-			this.buttonDown.Name = "buttonDown";
-			this.buttonDown.Size = new Size( 33, 25 );
-			this.buttonDown.TabIndex = 6;
-			this.buttonDown.Text = "▼";
-			this.buttonDown.UseVisualStyleBackColor = true;
-			this.toolTip.SetToolTip( this.buttonDown, "選択中のプロファイルを下へ移動します" );
-			// 
 			// checkIndicator
 			// 
 			this.checkIndicator.Anchor =  AnchorStyles.Bottom  |  AnchorStyles.Left ;
@@ -202,7 +202,7 @@ namespace RenDaClicker {
 			// 
 			// comboWindows
 			// 
-			this.comboWindows.Anchor =  AnchorStyles.Bottom  |  AnchorStyles.Left ;
+			this.comboWindows.Anchor =   AnchorStyles.Bottom  |  AnchorStyles.Left   |  AnchorStyles.Right ;
 			this.comboWindows.DropDownStyle = ComboBoxStyle.DropDownList;
 			this.comboWindows.Location = new Point( 28, 260 );
 			this.comboWindows.Name = "comboWindows";
@@ -211,7 +211,7 @@ namespace RenDaClicker {
 			// 
 			// buttonRefreshWindows
 			// 
-			this.buttonRefreshWindows.Anchor =  AnchorStyles.Bottom  |  AnchorStyles.Left ;
+			this.buttonRefreshWindows.Anchor =  AnchorStyles.Bottom  |  AnchorStyles.Right ;
 			this.buttonRefreshWindows.Location = new Point( 292, 259 );
 			this.buttonRefreshWindows.Name = "buttonRefreshWindows";
 			this.buttonRefreshWindows.Size = new Size( 90, 25 );
@@ -232,7 +232,7 @@ namespace RenDaClicker {
 			// 
 			// buttonSuspend
 			// 
-			this.buttonSuspend.Anchor =  AnchorStyles.Bottom  |  AnchorStyles.Left ;
+			this.buttonSuspend.Anchor =   AnchorStyles.Bottom  |  AnchorStyles.Left   |  AnchorStyles.Right ;
 			this.buttonSuspend.Location = new Point( 12, 335 );
 			this.buttonSuspend.Name = "buttonSuspend";
 			this.buttonSuspend.Size = new Size( 370, 42 );
