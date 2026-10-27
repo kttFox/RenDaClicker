@@ -332,8 +332,18 @@ namespace RenDaClicker {
 			}
 			// 更新前の選択を可能な限り維持(判定はタイトルのみのためタイトル一致で復元)
 			if( prev != null ) {
-				comboWindows.SelectedItem = items.FirstOrDefault( i => i.Title == prev.Title );
+				SelectWindowTitle( prev.Title );
 			}
+		}
+
+		// タイトルで対象を選択する。該当ウインドウが未起動でも、あとから起動されたときに判定できるよう項目として残す
+		private void SelectWindowTitle( string title ) {
+			var item = comboWindows.Items.OfType<WindowItem>().FirstOrDefault( i => i.Title == title );
+			if( item == null ) {
+				item = new WindowItem( 0, title );
+				comboWindows.Items.Insert( 0, item );
+			}
+			comboWindows.SelectedItem = item;
 		}
 
 		private void UpdateTargetControls() {
@@ -529,8 +539,7 @@ namespace RenDaClicker {
 				}
 				// 前回の対象ウインドウをタイトル一致で復元
 				if( !string.IsNullOrEmpty( s.TargetWindowTitle ) ) {
-					comboWindows.SelectedItem = comboWindows.Items.OfType<WindowItem>()
-						.FirstOrDefault( i => i.Title == s.TargetWindowTitle );
+					SelectWindowTitle( s.TargetWindowTitle );
 				}
 			} catch {
 				// 読み込み失敗時は既定値のまま起動
